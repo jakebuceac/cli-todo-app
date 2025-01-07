@@ -156,6 +156,41 @@ func (t *Task) Update(task Task) (Task, error) {
 	return task, nil
 }
 
+func (t *Task) Delete(task Task) error {
+	tasks, err := t.Index()
+
+	if err != nil {
+		log.Println("Failed to get all tasks")
+
+		return err
+	}
+
+	for index := range tasks {
+		if tasks[index].ID == task.ID {
+			tasks = append(tasks[:index], tasks[index+1:]...)
+			break
+		}
+	}
+
+	mydir, err := os.Getwd()
+
+	if err != nil {
+		log.Println("Failed to get current directory")
+
+		return err
+	}
+
+	err = writeToCsv(mydir+"/data/todo-list.csv", tasks)
+
+	if err != nil {
+		log.Println("Failed to delete task in csv")
+
+		return err
+	}
+
+	return nil
+}
+
 func setTaskId(task Task, tasks []Task) (Task, error) {
 	id := 1
 
