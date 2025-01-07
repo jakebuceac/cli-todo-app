@@ -45,6 +45,8 @@ func listCommand(cmd *cobra.Command, args []string) {
 
 	if err != nil {
 		log.Println("Failed to set tasks:", err)
+
+		return
 	}
 
 	tabWriter.Init(os.Stdout, 0, 8, 0, '\t', 0)
@@ -67,6 +69,8 @@ func printCurrentTasks(tabWriter *tabwriter.Writer, tasks []data.Task) {
 
 			if err != nil {
 				log.Println("Failed to convert tasks 'created' property from string to time:", err)
+
+				return
 			}
 
 			fmt.Fprintf(tabWriter, "%d\t%s\t%s\n", task.ID, task.Name, timeDifference)
@@ -82,6 +86,8 @@ func printAllTasks(tabWriter *tabwriter.Writer, tasks []data.Task) {
 
 		if err != nil {
 			log.Println("Failed to convert tasks 'created' property from string to time:", err)
+
+			return
 		}
 
 		fmt.Fprintf(tabWriter, "%d\t%s\t%s\t%t\n", task.ID, task.Name, timeDifference, task.Completed)

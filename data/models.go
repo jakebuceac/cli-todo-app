@@ -2,6 +2,7 @@ package data
 
 import (
 	"encoding/csv"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -22,13 +23,17 @@ func (t *Task) Index() ([]Task, error) {
 	mydir, err := os.Getwd()
 
 	if err != nil {
-		log.Println("Failed to get current directory:", err)
+		log.Println("Failed to get current directory")
+
+		return nil, err
 	}
 
 	records, err := readCsvFile(mydir + "/data/todo-list.csv")
 
 	if err != nil {
-		log.Println("Failed to read csv file:", err)
+		log.Println("Failed to read csv file")
+
+		return nil, err
 	}
 
 	var tasks []Task
@@ -62,17 +67,21 @@ func (t *Task) Index() ([]Task, error) {
 }
 
 func (t *Task) Store(task Task) (Task, error) {
-	tasks, err := task.Index()
+	tasks, err := t.Index()
 
 	if err != nil {
-		log.Println("Failed to get all tasks:", err)
+		log.Println("Failed to get all tasks:")
+
+		return Task{}, err
 	}
 
 	// Set a unique ID for new Task
 	task, err = setTaskId(task, tasks)
 
 	if err != nil {
-		log.Println("Failed to set task ID:", err)
+		log.Println("Failed to set task ID")
+
+		return Task{}, err
 	}
 
 	tasks = append(tasks, task)
@@ -80,13 +89,68 @@ func (t *Task) Store(task Task) (Task, error) {
 	mydir, err := os.Getwd()
 
 	if err != nil {
-		log.Println("Failed to get current directory:", err)
+		log.Println("Failed to get current directory")
+
+		return Task{}, err
 	}
 
 	err = writeToCsv(mydir+"/data/todo-list.csv", tasks)
 
 	if err != nil {
-		log.Println("Failed to add new task to csv:", err)
+		log.Println("Failed to add new task to csv")
+
+		return Task{}, err
+	}
+
+	return task, nil
+}
+
+func (t *Task) Show(taskId int) (Task, error) {
+	tasks, err := t.Index()
+
+	if err != nil {
+		return Task{}, err
+	}
+
+	for _, task := range tasks {
+		if taskId == task.ID {
+			return task, nil
+		}
+	}
+
+	return Task{}, fmt.Errorf("could not find task with ID %d", taskId)
+}
+
+func (t *Task) Update(task Task) (Task, error) {
+	tasks, err := t.Index()
+
+	if err != nil {
+		log.Println("Failed to get all tasks")
+
+		return Task{}, err
+	}
+
+	for index := range tasks {
+		if tasks[index].ID == task.ID {
+			tasks[index].Completed = task.Completed
+			break
+		}
+	}
+
+	mydir, err := os.Getwd()
+
+	if err != nil {
+		log.Println("Failed to get current directory")
+
+		return Task{}, err
+	}
+
+	err = writeToCsv(mydir+"/data/todo-list.csv", tasks)
+
+	if err != nil {
+		log.Println("Failed to update task in csv")
+
+		return Task{}, err
 	}
 
 	return task, nil

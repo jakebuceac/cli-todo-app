@@ -50,6 +50,8 @@ func addCommand(cmd *cobra.Command, args []string) {
 
 	if err != nil {
 		log.Println("Failed to save new task:", err)
+
+		return
 	}
 
 	printNewTask(task)
@@ -67,6 +69,8 @@ func printNewTask(task data.Task) {
 
 	if err != nil {
 		log.Println("Failed to format datetime string:", err)
+
+		return
 	}
 
 	timeDifference := timediff.TimeDiff(time)
