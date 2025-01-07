@@ -69,7 +69,7 @@ func printCurrentTasks(tabWriter *tabwriter.Writer, tasks []data.Task) {
 				log.Println("Failed to convert tasks 'created' property from string to time:", err)
 			}
 
-			fmt.Fprintf(tabWriter, "%s\t%s\t%s\n", task.ID, task.Name, timeDifference)
+			fmt.Fprintf(tabWriter, "%d\t%s\t%s\n", task.ID, task.Name, timeDifference)
 		}
 	}
 }
@@ -84,7 +84,7 @@ func printAllTasks(tabWriter *tabwriter.Writer, tasks []data.Task) {
 			log.Println("Failed to convert tasks 'created' property from string to time:", err)
 		}
 
-		fmt.Fprintf(tabWriter, "%s\t%s\t%s\t%t\n", task.ID, task.Name, timeDifference, task.Completed)
+		fmt.Fprintf(tabWriter, "%d\t%s\t%s\t%t\n", task.ID, task.Name, timeDifference, task.Completed)
 	}
 }
 
