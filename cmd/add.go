@@ -69,11 +69,7 @@ func printNewTask(task data.Task) {
 		log.Println("Failed to format datetime string:", err)
 	}
 
-	timeDifference, err := timediff.TimeDiff(time), nil
-
-	if err != nil {
-		log.Println("Failed to convert tasks 'created' property from string to time:", err)
-	}
+	timeDifference := timediff.TimeDiff(time)
 
 	fmt.Fprintf(tabWriter, "%d\t%s\t%s\n", task.ID, task.Name, timeDifference)
 }
