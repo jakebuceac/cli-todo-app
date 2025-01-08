@@ -82,3 +82,7 @@ $ tasks delete <taskid>
 - `os` for opening and reading files
 - `github.com/spf13/cobra` for the command line interface
 - `github.com/mergestat/timediff` for displaying relative friendly time differences (1 hour ago, 10 minutes ago, etc)
+
+## Authors
+
+Written by Jake Buceac in January 2025.
