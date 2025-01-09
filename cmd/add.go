@@ -46,7 +46,7 @@ func addCommand(cmd *cobra.Command, args []string) {
 		Completed: false,
 	}
 
-	task, err := models.Task.Store(payload)
+	taskId, err := models.Task.Store(payload)
 
 	if err != nil {
 		log.Println("Failed to save new task:", err)
@@ -54,10 +54,18 @@ func addCommand(cmd *cobra.Command, args []string) {
 		return
 	}
 
+	task, err := models.Task.Show(taskId)
+
+	if err != nil {
+		log.Println("Failed to get new task:", err)
+
+		return
+	}
+
 	printNewTask(task)
 }
 
-func printNewTask(task data.Task) {
+func printNewTask(task *data.Task) {
 	tabWriter := new(tabwriter.Writer)
 	tabWriter.Init(os.Stdout, 0, 8, 0, '\t', 0)
 

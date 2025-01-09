@@ -19,7 +19,7 @@ type Task struct {
 	Completed bool
 }
 
-func (t *Task) Index() ([]Task, error) {
+func (t *Task) Index() ([]*Task, error) {
 	mydir, err := os.Getwd()
 
 	if err != nil {
@@ -36,7 +36,7 @@ func (t *Task) Index() ([]Task, error) {
 		return nil, err
 	}
 
-	var tasks []Task
+	var tasks []*Task
 
 	for index, record := range records {
 		if index == 0 {
@@ -55,7 +55,7 @@ func (t *Task) Index() ([]Task, error) {
 			return nil, err
 		}
 
-		tasks = append(tasks, Task{
+		tasks = append(tasks, &Task{
 			ID:        taskId,
 			Name:      record[1],
 			Created:   record[2],
@@ -66,13 +66,13 @@ func (t *Task) Index() ([]Task, error) {
 	return tasks, nil
 }
 
-func (t *Task) Store(task Task) (Task, error) {
+func (t *Task) Store(task Task) (int64, error) {
 	tasks, err := t.Index()
 
 	if err != nil {
 		log.Println("Failed to get all tasks:")
 
-		return Task{}, err
+		return 0, err
 	}
 
 	// Set a unique ID for new Task
@@ -81,17 +81,17 @@ func (t *Task) Store(task Task) (Task, error) {
 	if err != nil {
 		log.Println("Failed to set task ID")
 
-		return Task{}, err
+		return 0, err
 	}
 
-	tasks = append(tasks, task)
+	tasks = append(tasks, &task)
 
 	mydir, err := os.Getwd()
 
 	if err != nil {
 		log.Println("Failed to get current directory")
 
-		return Task{}, err
+		return 0, err
 	}
 
 	err = writeToCsv(mydir+"/data/todo-list.csv", tasks)
@@ -99,64 +99,29 @@ func (t *Task) Store(task Task) (Task, error) {
 	if err != nil {
 		log.Println("Failed to add new task to csv")
 
-		return Task{}, err
+		return 0, err
 	}
 
-	return task, nil
+	return int64(task.ID), nil
 }
 
-func (t *Task) Show(taskId int) (Task, error) {
+func (t *Task) Show(taskId int64) (*Task, error) {
 	tasks, err := t.Index()
 
 	if err != nil {
-		return Task{}, err
+		return &Task{}, err
 	}
 
 	for _, task := range tasks {
-		if taskId == task.ID {
+		if taskId == int64(task.ID) {
 			return task, nil
 		}
 	}
 
-	return Task{}, fmt.Errorf("could not find task with ID %d", taskId)
+	return &Task{}, fmt.Errorf("could not find task with ID %d", taskId)
 }
 
-func (t *Task) Update(task Task) (Task, error) {
-	tasks, err := t.Index()
-
-	if err != nil {
-		log.Println("Failed to get all tasks")
-
-		return Task{}, err
-	}
-
-	for index := range tasks {
-		if tasks[index].ID == task.ID {
-			tasks[index].Completed = task.Completed
-			break
-		}
-	}
-
-	mydir, err := os.Getwd()
-
-	if err != nil {
-		log.Println("Failed to get current directory")
-
-		return Task{}, err
-	}
-
-	err = writeToCsv(mydir+"/data/todo-list.csv", tasks)
-
-	if err != nil {
-		log.Println("Failed to update task in csv")
-
-		return Task{}, err
-	}
-
-	return task, nil
-}
-
-func (t *Task) Delete(task Task) error {
+func (t *Task) Update() error {
 	tasks, err := t.Index()
 
 	if err != nil {
@@ -166,7 +131,42 @@ func (t *Task) Delete(task Task) error {
 	}
 
 	for index := range tasks {
-		if tasks[index].ID == task.ID {
+		if tasks[index].ID == t.ID {
+			tasks[index].Completed = t.Completed
+			break
+		}
+	}
+
+	mydir, err := os.Getwd()
+
+	if err != nil {
+		log.Println("Failed to get current directory")
+
+		return err
+	}
+
+	err = writeToCsv(mydir+"/data/todo-list.csv", tasks)
+
+	if err != nil {
+		log.Println("Failed to update task in csv")
+
+		return err
+	}
+
+	return nil
+}
+
+func (t *Task) Delete() error {
+	tasks, err := t.Index()
+
+	if err != nil {
+		log.Println("Failed to get all tasks")
+
+		return err
+	}
+
+	for index := range tasks {
+		if tasks[index].ID == t.ID {
 			tasks = append(tasks[:index], tasks[index+1:]...)
 			break
 		}
@@ -191,7 +191,7 @@ func (t *Task) Delete(task Task) error {
 	return nil
 }
 
-func setTaskId(task Task, tasks []Task) (Task, error) {
+func setTaskId(task Task, tasks []*Task) (Task, error) {
 	id := 1
 
 	if len(tasks) > 0 {
@@ -224,7 +224,7 @@ func readCsvFile(filename string) ([][]string, error) {
 	return records, nil
 }
 
-func writeToCsv(filename string, tasks []Task) error {
+func writeToCsv(filename string, tasks []*Task) error {
 	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
 
 	if err != nil {

@@ -59,7 +59,7 @@ func listCommand(cmd *cobra.Command, args []string) {
 	}
 }
 
-func printCurrentTasks(tabWriter *tabwriter.Writer, tasks []data.Task) {
+func printCurrentTasks(tabWriter *tabwriter.Writer, tasks []*data.Task) {
 	fmt.Fprintln(tabWriter, "ID\tTask\tCreated")
 
 	for _, task := range tasks {
@@ -77,7 +77,7 @@ func printCurrentTasks(tabWriter *tabwriter.Writer, tasks []data.Task) {
 	}
 }
 
-func printAllTasks(tabWriter *tabwriter.Writer, tasks []data.Task) {
+func printAllTasks(tabWriter *tabwriter.Writer, tasks []*data.Task) {
 	fmt.Fprintln(tabWriter, "ID\tTask\tCreated\tDone")
 
 	for _, task := range tasks {

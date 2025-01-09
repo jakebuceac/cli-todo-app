@@ -47,7 +47,7 @@ func completeCommand(cmd *cobra.Command, args []string) {
 	}
 
 	models := data.Models{}
-	task, err := models.Task.Show(taskId)
+	task, err := models.Task.Show(int64(taskId))
 
 	if err != nil {
 		log.Println("Could not find task:", err)
@@ -56,7 +56,7 @@ func completeCommand(cmd *cobra.Command, args []string) {
 	}
 
 	task.Completed = true
-	task, err = models.Task.Update(task)
+	err = task.Update()
 
 	if err != nil {
 		log.Println("Failed to update task:", err)
@@ -67,7 +67,7 @@ func completeCommand(cmd *cobra.Command, args []string) {
 	printUpdatedTask(task)
 }
 
-func printUpdatedTask(task data.Task) {
+func printUpdatedTask(task *data.Task) {
 	tabWriter := new(tabwriter.Writer)
 	tabWriter.Init(os.Stdout, 0, 8, 0, '\t', 0)
 
