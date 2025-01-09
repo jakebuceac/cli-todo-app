@@ -43,7 +43,7 @@ func deleteCommand(cmd *cobra.Command, args []string) {
 	}
 
 	models := data.Models{}
-	task, err := models.Task.Show(taskId)
+	task, err := models.Task.Show(int64(taskId))
 
 	if err != nil {
 		log.Println("Could not find task:", err)
@@ -51,7 +51,7 @@ func deleteCommand(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	err = models.Task.Delete(task)
+	err = task.Delete()
 
 	if err != nil {
 		log.Println("Could not delete task:", err)

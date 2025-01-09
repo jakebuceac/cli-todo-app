@@ -60,7 +60,7 @@ func listCommand(cmd *cobra.Command, args []string) {
 	}
 }
 
-func printCurrentTasks(tabWriter *tabwriter.Writer, tasks []data.Task) {
+func printCurrentTasks(tabWriter *tabwriter.Writer, tasks []*data.Task) {
 	fmt.Fprintln(tabWriter, "ID\tTask\tCreated")
 
 	for _, task := range tasks {
@@ -78,7 +78,7 @@ func printCurrentTasks(tabWriter *tabwriter.Writer, tasks []data.Task) {
 	}
 }
 
-func printAllTasks(tabWriter *tabwriter.Writer, tasks []data.Task) {
+func printAllTasks(tabWriter *tabwriter.Writer, tasks []*data.Task) {
 	fmt.Fprintln(tabWriter, "ID\tTask\tCreated\tDone")
 
 	for _, task := range tasks {
@@ -95,7 +95,7 @@ func printAllTasks(tabWriter *tabwriter.Writer, tasks []data.Task) {
 }
 
 func calculateTimeDifference(createdAt string) (string, error) {
-	time, err := time.Parse("2006-01-02T15:04:05-07:00", createdAt)
+	time, err := time.Parse("2006-01-02 15:04:05", createdAt)
 
 	if err != nil {
 		return "", err

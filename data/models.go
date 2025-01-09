@@ -1,12 +1,23 @@
 package data
 
 import (
-	"encoding/csv"
-	"fmt"
+	"context"
+	"database/sql"
 	"log"
-	"os"
-	"strconv"
+	"time"
 )
+
+const dbTimeout = time.Second * 3
+
+var db *sql.DB
+
+func New(dbPool *sql.DB) Models {
+	db = dbPool
+
+	return Models{
+		Task: Task{},
+	}
+}
 
 type Models struct {
 	Task Task
@@ -19,240 +30,124 @@ type Task struct {
 	Completed bool
 }
 
-func (t *Task) Index() ([]Task, error) {
-	mydir, err := os.Getwd()
+func (t *Task) Index() ([]*Task, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+
+	defer cancel()
+
+	query := `SELECT id, description, is_complete, created_at FROM tasks ORDER BY id`
+
+	rows, err := db.QueryContext(ctx, query)
 
 	if err != nil {
-		log.Println("Failed to get current directory")
-
 		return nil, err
 	}
 
-	records, err := readCsvFile(mydir + "/data/todo-list.csv")
+	defer rows.Close()
 
-	if err != nil {
-		log.Println("Failed to read csv file")
+	var tasks []*Task
 
-		return nil, err
-	}
+	for rows.Next() {
+		var task Task
 
-	var tasks []Task
-
-	for index, record := range records {
-		if index == 0 {
-			continue
-		}
-
-		taskFinished, err := strconv.ParseBool(record[3])
+		err := rows.Scan(
+			&task.ID,
+			&task.Name,
+			&task.Completed,
+			&task.Created,
+		)
 
 		if err != nil {
+			log.Println("Error scanning", err)
+
 			return nil, err
 		}
 
-		taskId, err := strconv.Atoi(record[0])
-
-		if err != nil {
-			return nil, err
-		}
-
-		tasks = append(tasks, Task{
-			ID:        taskId,
-			Name:      record[1],
-			Created:   record[2],
-			Completed: taskFinished,
-		})
+		tasks = append(tasks, &task)
 	}
 
 	return tasks, nil
 }
 
-func (t *Task) Store(task Task) (Task, error) {
-	tasks, err := t.Index()
+func (t *Task) Store(task Task) (int64, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+
+	defer cancel()
+
+	statement := `INSERT INTO tasks (description, is_complete, created_at) VALUES (?, ?, ?)`
+
+	result, err := db.ExecContext(ctx, statement, task.Name, task.Completed, time.Now())
 
 	if err != nil {
-		log.Println("Failed to get all tasks:")
+		log.Println("Error inserting", err)
 
-		return Task{}, err
+		return 0, err
 	}
 
-	// Set a unique ID for new Task
-	task, err = setTaskId(task, tasks)
+	id, err := result.LastInsertId()
 
 	if err != nil {
-		log.Println("Failed to set task ID")
-
-		return Task{}, err
+		return 0, err
 	}
 
-	tasks = append(tasks, task)
-
-	mydir, err := os.Getwd()
-
-	if err != nil {
-		log.Println("Failed to get current directory")
-
-		return Task{}, err
-	}
-
-	err = writeToCsv(mydir+"/data/todo-list.csv", tasks)
-
-	if err != nil {
-		log.Println("Failed to add new task to csv")
-
-		return Task{}, err
-	}
-
-	return task, nil
+	return id, nil
 }
 
-func (t *Task) Show(taskId int) (Task, error) {
-	tasks, err := t.Index()
+func (t *Task) Show(taskId int64) (*Task, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+
+	defer cancel()
+
+	query := `SELECT id, description, is_complete, created_at FROM tasks WHERE id = ?`
+
+	var task Task
+
+	row := db.QueryRowContext(ctx, query, taskId)
+
+	err := row.Scan(
+		&task.ID,
+		&task.Name,
+		&task.Completed,
+		&task.Created,
+	)
 
 	if err != nil {
-		return Task{}, err
+		return nil, err
 	}
 
-	for _, task := range tasks {
-		if taskId == task.ID {
-			return task, nil
-		}
-	}
-
-	return Task{}, fmt.Errorf("could not find task with ID %d", taskId)
+	return &task, nil
 }
 
-func (t *Task) Update(task Task) (Task, error) {
-	tasks, err := t.Index()
+func (t *Task) Update() error {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+
+	defer cancel()
+
+	statement := `UPDATE tasks SET is_complete = ? WHERE id = ?`
+
+	_, err := db.ExecContext(ctx, statement,
+		t.Completed,
+		t.ID,
+	)
 
 	if err != nil {
-		log.Println("Failed to get all tasks")
-
-		return Task{}, err
-	}
-
-	for index := range tasks {
-		if tasks[index].ID == task.ID {
-			tasks[index].Completed = task.Completed
-			break
-		}
-	}
-
-	mydir, err := os.Getwd()
-
-	if err != nil {
-		log.Println("Failed to get current directory")
-
-		return Task{}, err
-	}
-
-	err = writeToCsv(mydir+"/data/todo-list.csv", tasks)
-
-	if err != nil {
-		log.Println("Failed to update task in csv")
-
-		return Task{}, err
-	}
-
-	return task, nil
-}
-
-func (t *Task) Delete(task Task) error {
-	tasks, err := t.Index()
-
-	if err != nil {
-		log.Println("Failed to get all tasks")
-
-		return err
-	}
-
-	for index := range tasks {
-		if tasks[index].ID == task.ID {
-			tasks = append(tasks[:index], tasks[index+1:]...)
-			break
-		}
-	}
-
-	mydir, err := os.Getwd()
-
-	if err != nil {
-		log.Println("Failed to get current directory")
-
-		return err
-	}
-
-	err = writeToCsv(mydir+"/data/todo-list.csv", tasks)
-
-	if err != nil {
-		log.Println("Failed to delete task in csv")
-
 		return err
 	}
 
 	return nil
 }
 
-func setTaskId(task Task, tasks []Task) (Task, error) {
-	id := 1
+func (t *Task) Delete() error {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
 
-	if len(tasks) > 0 {
-		lastId := tasks[len(tasks)-1].ID
+	defer cancel()
 
-		id = lastId + 1
-	}
+	statement := `DELETE from tasks where id = ?`
 
-	task.ID = id
-
-	return task, nil
-}
-
-func readCsvFile(filename string) ([][]string, error) {
-	file, err := os.Open(filename)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer file.Close()
-
-	csvReader := csv.NewReader(file)
-	records, err := csvReader.ReadAll()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return records, nil
-}
-
-func writeToCsv(filename string, tasks []Task) error {
-	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	_, err := db.ExecContext(ctx, statement, t.ID)
 
 	if err != nil {
 		return err
-	}
-
-	defer file.Close()
-
-	csvWriter := csv.NewWriter(file)
-
-	defer csvWriter.Flush()
-
-	// Set headers of CSV
-	_ = csvWriter.Write([]string{
-		"ID",
-		"Description",
-		"CreatedAt",
-		"IsComplete",
-	})
-
-	// Set tasks
-	for _, task := range tasks {
-		_ = csvWriter.Write([]string{
-			strconv.Itoa(task.ID),
-			task.Name,
-			task.Created,
-			strconv.FormatBool(task.Completed),
-		})
 	}
 
 	return nil
