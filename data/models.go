@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"syscall"
 )
 
 type Models struct {
@@ -206,13 +207,13 @@ func setTaskId(task Task, tasks []*Task) (Task, error) {
 }
 
 func readCsvFile(filename string) ([][]string, error) {
-	file, err := os.Open(filename)
+	file, err := loadFile(filename)
 
 	if err != nil {
 		return nil, err
 	}
 
-	defer file.Close()
+	defer closeFile(file)
 
 	csvReader := csv.NewReader(file)
 	records, err := csvReader.ReadAll()
@@ -225,13 +226,16 @@ func readCsvFile(filename string) ([][]string, error) {
 }
 
 func writeToCsv(filename string, tasks []*Task) error {
-	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	file, err := loadFile(filename)
 
 	if err != nil {
 		return err
 	}
 
-	defer file.Close()
+	defer closeFile(file)
+
+	file.Truncate(0)
+	file.Seek(0, 0)
 
 	csvWriter := csv.NewWriter(file)
 
@@ -256,4 +260,25 @@ func writeToCsv(filename string, tasks []*Task) error {
 	}
 
 	return nil
+}
+
+func loadFile(filepath string) (*os.File, error) {
+	f, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE, os.ModePerm)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file for reading")
+	}
+
+	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_EX); err != nil {
+		_ = f.Close()
+		return nil, err
+	}
+
+	return f, nil
+}
+
+func closeFile(f *os.File) error {
+	syscall.Flock(int(f.Fd()), syscall.LOCK_UN)
+
+	return f.Close()
 }
