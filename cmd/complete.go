@@ -5,14 +5,13 @@ package cmd
 
 import (
 	"cli-todo-app/data"
+	"cli-todo-app/helpers"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"text/tabwriter"
-	"time"
 
-	"github.com/mergestat/timediff"
 	"github.com/spf13/cobra"
 )
 
@@ -76,13 +75,13 @@ func printUpdatedTask(task *data.Task) {
 
 	fmt.Fprintln(tabWriter, "ID\tTask\tCreated\tDone")
 
-	time, err := time.Parse("2006-01-02 15:04:05", task.Created)
+	timeDifference, err := helpers.CalculateTimeDifference(task.Created)
 
 	if err != nil {
-		log.Println("Failed to format datetime string:", err)
-	}
+		log.Println("Failed to convert tasks 'created' property from string to time:", err)
 
-	timeDifference := timediff.TimeDiff(time)
+		return
+	}
 
 	fmt.Fprintf(tabWriter, "%d\t%s\t%s\t%t\n", task.ID, task.Name, timeDifference, task.Completed)
 }
