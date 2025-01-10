@@ -10,7 +10,7 @@ $ tasks
 
 ## Example
 
-Should be able to perform crud operations via a cli on a data file of tasks. The operations should be as follows:
+Should be able to perform crud operations via a cli to database with a table of tasks. The operations should be as follows:
 
 ```
 $ tasks add "My new task"
@@ -76,10 +76,10 @@ $ tasks delete <taskid>
 
 ## Notable Packages Used
 
-- `encoding/csv` for writing out as a csv file
+- `database/sql` for reading and writing to a sql database
 - `strconv` for turning types into strings and visa versa
 - `text/tabwriter` for writing out tab aligned output
-- `os` for opening and reading files
+- `github.com/go-sql-driver/mysql` for setting up a connection to mysql database
 - `github.com/spf13/cobra` for the command line interface
 - `github.com/mergestat/timediff` for displaying relative friendly time differences (1 hour ago, 10 minutes ago, etc)
 
