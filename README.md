@@ -1,8 +1,8 @@
 # Todo App
 
-## Goal
-
 This is my attempt at the first task from the Dreams of Code video, [Five of my favorite project ideas to learn Go.](https://youtu.be/gXmznGEW9vo?si=hSKVSBehhfvaiWMA)
+
+## Goal
 
 ```
 $ tasks
