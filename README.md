@@ -4,6 +4,8 @@ This is my attempt at the first task from the Dreams of Code video, [Five of my 
 
 ## Goal
 
+Create a cli application for managing tasks in the terminal.
+
 ```
 $ tasks
 ```
